@@ -1,0 +1,19 @@
+edition = "2015"
+
+tab_spaces = 2
+
+max_width = 100
+
+comment_width = 100
+wrap_comments = true
+
+group_imports = "One"
+imports_granularity = "One"
+
+struct_field_align_threshold = 60
+use_field_init_shorthand = true
+
+match_arm_blocks = false
+
+control_brace_style = "ClosingNextLine"
+trailing_comma = "Never"
