@@ -23,10 +23,10 @@ impl<'lexer> Lexer<'lexer> {
     }
   }
 
-  pub fn lex(&mut self) -> Result<Vec<Token>, Vec<Error>> {
+  pub fn lex(&mut self) -> Result<Vec<Token<'lexer>>, Vec<Error>> {
     // Even if an error occurs, we keep scanning. There may be other errors later in the program.
     // It gives our users a better experience if we detect as many of those as possible in one go.
-    let (tokens, errors): (Vec<Token>, Vec<Error>) = self.by_ref().partition_result();
+    let (tokens, errors): (Vec<_>, Vec<_>) = self.by_ref().partition_result();
 
     if !errors.is_empty() {
       return Err(errors);
@@ -48,7 +48,14 @@ impl<'lexer> Iterator for Lexer<'lexer> {
       still represent something. This blob of characters is called a lexeme.
 
       The rules that determine how a particular language groups characters into lexemes, is called
-      the lexical grammar.
+      the lexical grammar. In Lox, as in most programming languages, the rules of that grammar are
+      simple enough to be classified a regular language. That’s the same “regular” as in regular
+      expressions.
+
+      You very precisely can recognize all of the different lexemes for Lox using regexes if you
+      want to, and there’s a pile of interesting theory underlying why that is and what it means.
+      Tools like Lex or Flex are designed expressly to let you do this—throw a handful of regexes
+      at them, and they give you a complete lexer back.
 
       The lexemes are only the raw substrings of the source code. However, in the process of
       grouping character sequences into lexemes, we also stumble upon some other useful

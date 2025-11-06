@@ -15,5 +15,7 @@ use_field_init_shorthand = true
 
 match_arm_blocks = false
 
-control_brace_style = "ClosingNextLine"
 trailing_comma = "Never"
+
+single_line_if_else_max_width = 100
+control_brace_style = "ClosingNextLine"
