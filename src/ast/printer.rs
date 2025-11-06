@@ -1,4 +1,4 @@
-use crate::parser::ast::Expression;
+use crate::ast::Expression;
 
 pub struct Printer;
 

@@ -46,21 +46,26 @@
 
 use crate::lexer::token::Token;
 
+#[derive(Debug)]
 pub enum Expression<'expression> {
-  Literal(Token<'expression>),
+  Literal(&'expression Token<'expression>),
   UnaryExpression(UnaryExpression<'expression>),
   BinaryExpression(BinaryExpression<'expression>)
 }
 
+#[derive(Debug)]
 pub struct UnaryExpression<'unary_expression> {
-  operator: Token<'unary_expression>,
+  operator: &'unary_expression Token<'unary_expression>,
   operand:  Box<Expression<'unary_expression>>
 }
 
+#[derive(Debug)]
 pub struct BinaryExpression<'binary_expression> {
   left_operand:  Box<Expression<'binary_expression>>,
-  operator:      Token<'binary_expression>,
+  operator:      &'binary_expression Token<'binary_expression>,
   right_operand: Box<Expression<'binary_expression>>
 }
 
+pub mod evaluator;
+pub mod parser;
 pub mod printer;

@@ -6,7 +6,7 @@ use {
   itertools::Itertools
 };
 
-mod source;
+pub mod source;
 pub mod token;
 
 // The lexer takes in raw source code as a series of characters and groups it into a series of
@@ -78,25 +78,24 @@ impl<'lexer> Iterator for Lexer<'lexer> {
 impl<'lexer> Lexer<'lexer> {
   fn lex_string(&mut self) -> Option<Result<Token<'lexer>, Error>> {
     // Consume the opening double quote.
-    let (position, _) = self.source.next_if_character('"')?;
-    let start = position;
+    let (start, _) = self.source.next_if_character('"')?;
 
     while self.source.consume_if_not_character('"') {}
 
     // Determine the literal value.
-    let value = &(self.source.source())[(*start.index() + 1)..(*self.source.position().index())];
+    let value = &(self.source.source())[(*start.index() + 1)..*self.source.position().index()];
 
     // Try consuming the closing double quote.
     match self.source.next_if_character('"') {
       // Closing double quote not present.
       // So, we've encountered an unterminated string.
       None => Some(Err(Error {
-        position,
-        r#type: ErrorType::UnterminatedString
+        position: start,
+        r#type:   ErrorType::UnterminatedString
       })),
 
       Some(_) => {
-        let token = Token::new(TokenType::String(value), position);
+        let token = Token::new(TokenType::String(value), start);
         Some(Ok(token))
       }
     }
@@ -105,8 +104,7 @@ impl<'lexer> Lexer<'lexer> {
   fn lex_number(&mut self) -> Option<Result<Token<'lexer>, Error>> {
     // Consume the integral part.
 
-    let (position, _) = self.source.next_if(|character| character.is_numeric())?;
-    let start = position;
+    let (start, _) = self.source.next_if(|character| character.is_numeric())?;
 
     while self.source.consume_if(|character| character.is_numeric()) {}
 
@@ -123,8 +121,8 @@ impl<'lexer> Lexer<'lexer> {
         // No numeric character present.
         // Which means the number has no fractional part.
         return Some(Err(Error {
-          position,
-          r#type: ErrorType::NumberHasNoFractionalPart
+          position: start,
+          r#type:   ErrorType::NumberHasNoFractionalPart
         }));
       };
 
@@ -133,7 +131,7 @@ impl<'lexer> Lexer<'lexer> {
 
     // Determine the literal value.
 
-    let value = &(self.source.source())[(*start.index())..(*self.source.position().index())];
+    let value = &(self.source.source())[*start.index()..*self.source.position().index()];
     match value.parse() {
       Err(_) => Some(Err(Error {
         position: start,
@@ -149,8 +147,7 @@ impl<'lexer> Lexer<'lexer> {
 
   fn lex_keyword_or_identifier(&mut self) -> Option<Result<Token<'lexer>, Error>> {
     // The first character must be an alphabet.
-    let (position, _) = self.source.next_if(|character| character.is_alphabetic())?;
-    let start = position;
+    let (start, _) = self.source.next_if(|character| character.is_alphabetic())?;
 
     while self
       .source
@@ -198,6 +195,8 @@ impl<'lexer> Lexer<'lexer> {
       '*' => make_token!(TokenType::Multiply),
       '/' => make_token!(TokenType::Divide),
 
+      '!' if self.source.consume_if_character('=') => make_token!(TokenType::NotEquals),
+      '!' => make_token!(TokenType::Not),
       '>' if self.source.consume_if_character('=') => make_token!(TokenType::GreaterThanOrEquals),
       '>' => make_token!(TokenType::GreaterThan),
       '<' if self.source.consume_if_character('=') => make_token!(TokenType::LessThanOrEquals),
@@ -217,6 +216,7 @@ impl<'lexer> Lexer<'lexer> {
     Some(Ok(token))
   }
 
+  #[inline]
   fn consume_whitespaces(&mut self) {
     while self
       .source
@@ -224,6 +224,7 @@ impl<'lexer> Lexer<'lexer> {
     {}
   }
 
+  #[inline]
   fn consume_comment(&mut self) {
     while self.source.consume_if_not_character('\n') {}
   }
@@ -233,8 +234,7 @@ impl<'lexer> Lexer<'lexer> {
 #[error("Lexing error occurred at {position} : {type}")]
 pub struct Error {
   position: Position,
-
-  r#type: ErrorType
+  r#type:   ErrorType
 }
 
 #[derive(Debug, PartialEq, Eq, strum_macros::Display)]

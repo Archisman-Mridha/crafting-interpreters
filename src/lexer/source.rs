@@ -1,6 +1,6 @@
 use {
   getset::Getters,
-  std::{fmt::Display, iter::Peekable, str::Chars}
+  std::{fmt::Display, iter::Peekable, rc::Rc, str::Chars}
 };
 
 #[derive(Getters)]
@@ -41,22 +41,27 @@ impl<'source> Source<'source> {
     self.next()
   }
 
+  #[inline]
   pub fn consume_if(&mut self, predicate: impl FnOnce(&char) -> bool) -> bool {
     self.next_if(predicate).is_some()
   }
 
+  #[inline]
   pub fn next_if_character(&mut self, expected: char) -> Option<(Position, char)> {
     self.next_if(|character| *character == expected)
   }
 
+  #[inline]
   pub fn consume_if_character(&mut self, expected: char) -> bool {
     self.next_if_character(expected).is_some()
   }
 
+  #[inline]
   pub fn next_if_not_character(&mut self, expected: char) -> Option<(Position, char)> {
     self.next_if(|character| *character != expected)
   }
 
+  #[inline]
   pub fn consume_if_not_character(&mut self, expected: char) -> bool {
     self.next_if_not_character(expected).is_some()
   }
@@ -66,7 +71,7 @@ impl<'source> Iterator for Source<'source> {
   type Item = (Position, char);
 
   fn next(&mut self) -> Option<Self::Item> {
-    let position = self.position;
+    let position = self.position.clone();
     let character = self.characters.next()?;
 
     // Update the position tracker.

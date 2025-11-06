@@ -56,7 +56,7 @@ pub enum TokenType<'token_type> {
   #[strum(to_string = "!=")]
   NotEquals,
 
-  #[strum(to_string = "=")]
+  #[strum(to_string = "==")]
   Equals,
 
   #[strum(to_string = ">")]

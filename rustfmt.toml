@@ -17,5 +17,5 @@ match_arm_blocks = false
 
 trailing_comma = "Never"
 
-single_line_if_else_max_width = 100
+single_line_if_else_max_width = 80
 control_brace_style = "ClosingNextLine"
