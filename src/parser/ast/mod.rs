@@ -4,13 +4,12 @@
                                     1 + 2 * 3 - 4
 
   Because you understand the order of operations, you know that the multiplication is evaluated
-  before the addition or subtraction. One way to visualize the evaluation precedence is using a
-  tree. Leaf nodes are numbers, and interior nodes are operators with branches for each of their
-  operands.
+  before the addition or subtraction.
 
-  In order to evaluate an arithmetic node, you need to know the numeric values of its subtrees, so
-  you have to evaluate those first. That means working your way from the leaves up to the root :
-  a post-order traversal.
+  One way to visualize the evaluation precedence is using a tree. Leaf nodes are numbers, and
+  interior nodes are operators with branches for each of their operands. In order to evaluate an
+  arithmetic node, you need to know the numeric values of its subtrees, so you have to evaluate
+  those first. That means working your way from the leaves up to the root : a post-order traversal.
 
   Regular languages aren’t powerful enough to handle such expressions which can nest arbitrarily
   deeply. We need a context-free grammar (CFG) : a type of formal grammar.

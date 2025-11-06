@@ -1,16 +1,29 @@
-expression -> literal
-            | unary-expression
-            | binary-expression
-            | grouped-expression
+/*
+  Operator precedance is the same as that in C :
+
+    (1) -, !
+    (2) /, *
+    (3) +, -
+    (4) >, >=, <, <=
+    (5) ==, !=
+
+  We define a separate rule for each precedence level.
+*/
+
+expression -> equality;
+
+equality -> comparison (( "==" | "!=" ) comparison)*;
+
+comparison -> additive (( ">" | ">=" | "<" | "<=" ) additive)*;
+
+additive -> multiplicative (( "+" | "-" ) multiplicative)*;
+
+multiplicative -> unary (( "*" | "/") unary)*;
+
+unary -> ( "-" | "!" ) unary
+       | primary;
+
+primary -> "(" expression ")"
+         | literal;
 
 literal -> NUMBER | STRING | BOOLEAN | "nil";
-
-grouped-expression -> "(" expression ")";
-
-unary-expression -> unary-operator expression;
-
-unary-operator -> "-" | "!";
-
-binary-expression -> expression binary-operator expression;
-
-binary-operator -> "==" | "!=" | "<" | "<=" | ">" | ">=" | "+" | "-"  | "*" | "/" ;
