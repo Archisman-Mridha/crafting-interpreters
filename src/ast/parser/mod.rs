@@ -27,42 +27,48 @@ use {
     ast::{BinaryExpression, Expression, UnaryExpression},
     lexer::{
       source::Position,
-      token::{Keyword, Token, TokenType}
+      token::{Token, TokenType}
     }
   },
-  std::{iter::Peekable, slice::Iter},
-  strum::Display
+  std::{iter::Peekable, vec::IntoIter}
 };
 
 pub struct Parser<'parser> {
-  tokens:   Peekable<Iter<'parser, Token<'parser>>>,
-  position: &'parser Position
+  pub(crate) tokens: Peekable<IntoIter<Token<'parser>>>,
+  position:          Position
 }
 
 impl<'parser> Parser<'parser> {
-  pub fn new(tokens: &'parser [Token<'parser>]) -> Option<Self> {
+  pub fn new(tokens: Vec<Token<'parser>>) -> Option<Self> {
     if tokens.is_empty() {
       return None;
     }
 
+    let position = tokens[0].position().clone();
+
     Some(Self {
-      tokens:   tokens.iter().peekable(),
-      position: tokens[0].position()
+      tokens: tokens.into_iter().peekable(),
+      position
     })
   }
 
-  pub fn parse(&mut self) -> Result<Box<Expression<'parser>>, Error<'parser>> {
+  pub fn parse(&mut self) -> Result<Box<Expression<'parser>>, Error> {
     self.parse_expression()
   }
 
-  fn parse_expression(&mut self) -> Result<Box<Expression<'parser>>, Error<'parser>> {
+  fn parse_expression(&mut self) -> Result<Box<Expression<'parser>>, Error> {
     self.parse_equality()
   }
 
-  pub fn parse_equality(&mut self) -> Result<Box<Expression<'parser>>, Error<'parser>> {
+  fn parse_equality(&mut self) -> Result<Box<Expression<'parser>>, Error> {
     let mut left_operand = self.parse_comparison()?;
 
-    while let Some(operator) = self.tokens.next_if(|token| token.is_equality_operator()) {
+    loop {
+      let operator = match self.next_if_equality_operator() {
+        Some(operator) => operator,
+        None => break
+      };
+
       let right_operand = self.parse_comparison()?;
 
       left_operand = Box::new(Expression::BinaryExpression(BinaryExpression {
@@ -75,10 +81,10 @@ impl<'parser> Parser<'parser> {
     Ok(left_operand)
   }
 
-  pub fn parse_comparison(&mut self) -> Result<Box<Expression<'parser>>, Error<'parser>> {
+  fn parse_comparison(&mut self) -> Result<Box<Expression<'parser>>, Error> {
     let mut left_operand = self.parse_additive_expression()?;
 
-    while let Some(operator) = self.tokens.next_if(|token| token.is_comparison_operator()) {
+    while let Some(operator) = self.next_if_comparison_operator() {
       let right_operand = self.parse_additive_expression()?;
 
       left_operand = Box::new(Expression::BinaryExpression(BinaryExpression {
@@ -91,10 +97,10 @@ impl<'parser> Parser<'parser> {
     Ok(left_operand)
   }
 
-  pub fn parse_additive_expression(&mut self) -> Result<Box<Expression<'parser>>, Error<'parser>> {
+  fn parse_additive_expression(&mut self) -> Result<Box<Expression<'parser>>, Error> {
     let mut left_operand = self.parse_multiplicative_expression()?;
 
-    while let Some(operator) = self.tokens.next_if(|token| token.is_additive_operator()) {
+    while let Some(operator) = self.next_if_additive_operator() {
       let right_operand = self.parse_multiplicative_expression()?;
 
       left_operand = Box::new(Expression::BinaryExpression(BinaryExpression {
@@ -107,15 +113,10 @@ impl<'parser> Parser<'parser> {
     Ok(left_operand)
   }
 
-  pub fn parse_multiplicative_expression(
-    &mut self
-  ) -> Result<Box<Expression<'parser>>, Error<'parser>> {
+  fn parse_multiplicative_expression(&mut self) -> Result<Box<Expression<'parser>>, Error> {
     let mut left_operand = self.parse_unary_expression()?;
 
-    while let Some(operator) = self
-      .tokens
-      .next_if(|token| token.is_multiplicative_operator())
-    {
+    while let Some(operator) = self.next_if_multiplicative_operator() {
       let right_operand = self.parse_unary_expression()?;
 
       left_operand = Box::new(Expression::BinaryExpression(BinaryExpression {
@@ -128,8 +129,8 @@ impl<'parser> Parser<'parser> {
     Ok(left_operand)
   }
 
-  pub fn parse_unary_expression(&mut self) -> Result<Box<Expression<'parser>>, Error<'parser>> {
-    match self.tokens.next_if(|token| token.is_unary_operator()) {
+  fn parse_unary_expression(&mut self) -> Result<Box<Expression<'parser>>, Error> {
+    match self.next_if_unary_operator() {
       Some(operator) => {
         let operand = self.parse_unary_expression()?;
 
@@ -143,7 +144,7 @@ impl<'parser> Parser<'parser> {
     }
   }
 
-  pub fn parse_paranthesized(&mut self) -> Result<Box<Expression<'parser>>, Error<'parser>> {
+  fn parse_paranthesized(&mut self) -> Result<Box<Expression<'parser>>, Error> {
     match self
       .tokens
       .next_if(|token| *(token.r#type()) == TokenType::OpenParanthesis)
@@ -158,7 +159,7 @@ impl<'parser> Parser<'parser> {
           .is_none()
         {
           return Err(Error {
-            position: open_paranthesis.position(),
+            position: open_paranthesis.position().clone(),
             r#type:   ErrorType::ExpectedCloseParanthesis
           });
         }
@@ -170,7 +171,7 @@ impl<'parser> Parser<'parser> {
     }
   }
 
-  pub fn parse_literal(&mut self) -> Result<Box<Expression<'parser>>, Error<'parser>> {
+  fn parse_literal(&mut self) -> Result<Box<Expression<'parser>>, Error> {
     match self.tokens.next_if(|token| token.is_literal()) {
       None => Err(Error {
         position: self.position,
@@ -183,55 +184,24 @@ impl<'parser> Parser<'parser> {
 }
 
 #[derive(Debug)]
-pub struct Error<'error> {
-  position: &'error Position,
+pub struct Error {
+  position: Position,
   r#type:   ErrorType
 }
 
-#[derive(Debug, Display)]
+#[derive(Debug, strum::Display)]
 pub enum ErrorType {
+  #[strum(to_string = "invalid unary operator")]
+  InvalidUnaryOperator,
+
+  #[strum(to_string = "invalid binary operator")]
+  InvalidBinaryOperator,
+
   #[strum(to_string = "expected a close paranthesis")]
   ExpectedCloseParanthesis,
 
   #[strum(to_string = "expected a literal")]
   ExpectedLiteral
-}
-
-impl<'token> Token<'token> {
-  fn is_equality_operator(&self) -> bool {
-    matches!(self.r#type(), TokenType::Equals | TokenType::NotEquals)
-  }
-
-  fn is_comparison_operator(&self) -> bool {
-    matches!(
-      self.r#type(),
-      TokenType::GreaterThan
-        | TokenType::GreaterThanOrEquals
-        | TokenType::LessThan
-        | TokenType::LessThanOrEquals
-    )
-  }
-
-  fn is_additive_operator(&self) -> bool {
-    matches!(self.r#type(), TokenType::Plus | TokenType::Minus)
-  }
-
-  fn is_multiplicative_operator(&self) -> bool {
-    matches!(self.r#type(), TokenType::Multiply | TokenType::Divide)
-  }
-
-  fn is_unary_operator(&self) -> bool {
-    matches!(self.r#type(), TokenType::Minus | TokenType::Not)
-  }
-
-  fn is_literal(&self) -> bool {
-    matches!(
-      self.r#type(),
-      TokenType::String(_)
-        | TokenType::Number(_)
-        | TokenType::Keyword(Keyword::True | Keyword::False | Keyword::Nil)
-    )
-  }
 }
 
 #[cfg(test)]
@@ -248,7 +218,7 @@ mod test {
     let mut lexer = Lexer::new(source);
     let tokens = lexer.lex().unwrap();
 
-    let mut parser = Parser::new(&tokens).unwrap();
+    let mut parser = Parser::new(tokens).unwrap();
     let expression = parser.parse().unwrap();
 
     Printer::print(&expression);

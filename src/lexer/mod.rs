@@ -208,7 +208,7 @@ impl<'lexer> Lexer<'lexer> {
       // We have encountered an unrecognized character.
       _ =>
         return Some(Err(Error {
-          r#type: ErrorType::UnrecognizedCharacter,
+          r#type: ErrorType::InvalidCharacter,
           position
         })),
     };
@@ -230,8 +230,7 @@ impl<'lexer> Lexer<'lexer> {
   }
 }
 
-#[derive(Debug, thiserror::Error)]
-#[error("Lexing error occurred at {position} : {type}")]
+#[derive(Debug)]
 pub struct Error {
   position: Position,
   r#type:   ErrorType
@@ -239,8 +238,8 @@ pub struct Error {
 
 #[derive(Debug, PartialEq, Eq, strum_macros::Display)]
 pub enum ErrorType {
-  #[strum(to_string = "unrecognized character")]
-  UnrecognizedCharacter,
+  #[strum(to_string = "invalid character")]
+  InvalidCharacter,
 
   #[strum(to_string = "unterminated string")]
   UnterminatedString,
@@ -275,7 +274,7 @@ mod tests {
     let errors = lexer.lex().unwrap_err();
 
     let error = &errors[0];
-    assert_eq!(error.r#type, ErrorType::UnrecognizedCharacter);
+    assert_eq!(error.r#type, ErrorType::InvalidCharacter);
   }
 
   #[test]

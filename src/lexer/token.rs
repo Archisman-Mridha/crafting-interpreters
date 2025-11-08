@@ -12,6 +12,15 @@ pub struct Token<'token> {
   position: Position
 }
 
+impl<'token> Token<'token> {
+  pub fn is_literal(&self) -> bool {
+    matches!(
+      self.r#type(),
+      TokenType::Number(_) | TokenType::String(_) | TokenType::Identifier(_)
+    )
+  }
+}
+
 #[derive(Debug, PartialEq, Eq, Display)]
 pub enum TokenType<'token_type> {
   #[strum(to_string = "(")]
@@ -71,7 +80,6 @@ pub enum TokenType<'token_type> {
   #[strum(to_string = "<=")]
   LessThanOrEquals,
 
-  // Literals.
   #[strum(to_string = "{0}")]
   String(&'token_type str),
 

@@ -44,28 +44,29 @@
   The formal grammar for Lox interpreter is defined at ./grammar.g.
 */
 
-use crate::lexer::token::Token;
+use crate::{ast::operator::Operator, lexer::token::Token};
 
 #[derive(Debug)]
 pub enum Expression<'expression> {
-  Literal(&'expression Token<'expression>),
+  Literal(Token<'expression>),
   UnaryExpression(UnaryExpression<'expression>),
   BinaryExpression(BinaryExpression<'expression>)
 }
 
 #[derive(Debug)]
 pub struct UnaryExpression<'unary_expression> {
-  operator: &'unary_expression Token<'unary_expression>,
+  operator: Operator<'unary_expression>,
   operand:  Box<Expression<'unary_expression>>
 }
 
 #[derive(Debug)]
 pub struct BinaryExpression<'binary_expression> {
   left_operand:  Box<Expression<'binary_expression>>,
-  operator:      &'binary_expression Token<'binary_expression>,
+  operator:      Operator<'binary_expression>,
   right_operand: Box<Expression<'binary_expression>>
 }
 
 pub mod evaluator;
+pub mod operator;
 pub mod parser;
 pub mod printer;

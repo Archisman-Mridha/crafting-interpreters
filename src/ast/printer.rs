@@ -19,7 +19,7 @@ impl<'expression> Printer {
 
       Expression::UnaryExpression(unary_expression) => {
         // Print the unary operator.
-        let unary_operator_type = unary_expression.operator.r#type();
+        let unary_operator_type = unary_expression.operator.precedance();
         println!("{prefix}{connector}{unary_operator_type}");
 
         // Print the operand as a child node.
@@ -31,7 +31,7 @@ impl<'expression> Printer {
 
       Expression::BinaryExpression(binary_expression) => {
         // Print the binary operator.
-        let binary_operator_type = binary_expression.operator.r#type();
+        let binary_operator_type = binary_expression.operator.precedance();
         println!("{prefix}{connector}{binary_operator_type}");
 
         // Print the operands as child nodes.

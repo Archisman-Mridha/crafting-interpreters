@@ -1,6 +1,6 @@
 use {
   getset::Getters,
-  std::{fmt::Display, iter::Peekable, rc::Rc, str::Chars}
+  std::{fmt::Display, iter::Peekable, str::Chars}
 };
 
 #[derive(Getters)]
